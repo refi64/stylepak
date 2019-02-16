@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+set -e
+
+[[ -n "$PAKITHEME_VERBOSE" ]] && set -x ||:
+
+usage() {
+  echo 'usage: pakitheme install-system|install-user|clear-cache [<theme>]'
+}
+
+die() {
+  echo "$@" >&2
+  exit 1
+}
+
+if [[ -z "$1" || "$1" == "-h" || "$1" == "--help" ]]; then
+  usage
+  exit
+fi
+
+cache_home="${XDG_CACHE_HOME:-$HOME/.cache}"
+data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+pakitheme_cache="$cache_home/pakitheme"
+repo_dir="$pakitheme_cache/repo"
+
+case "$1" in
+install-system) install_target=system ;;
+install-user) install_target=user ;;
+clear-cache) rm -rf "$pakitheme_cache"; exit ;;
+*) usage; exit 1 ;;
+esac
+
+[[ -n "$2" ]] && theme=$2 || \
+  theme=$(gsettings get org.gnome.desktop.interface gtk-theme | tr -d "'")
+echo "Converting theme: $theme"
+
+app_id=org.gtk.Gtk3theme.$theme
+
+for location in "$data_home/themes" "$HOME/.themes" /usr/share/themes; do
+  if [[ -d "$location/$theme" ]]; then
+    echo "Found theme located at: $location/$theme"
+    theme_path="$location/$theme"
+    break
+  fi
+done
+
+[[ -n "$theme_path" ]] || die 'Could not locate theme.'
+
+build_dir="$pakitheme_cache/$theme"
+bundle="$pakitheme_cache/$theme.flatpak"
+
+rm -rf "$build_dir"
+flatpak build-init --type=extension "$build_dir" $app_id org.freedesktop.Platform \
+  org.freedesktop.Platform 18.08
+
+cp -a "$theme_path/"* "$build_dir/files"
+
+mkdir -p "$build_dir/files/share/appdata"
+cat >"$build_dir/files/share/appdata/$app_id.appdata.xml" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="runtime">
+  <id>$app_id</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <name>$name Gtk theme</name>
+  <summary>$name Gtk theme (generated via pakitheme)</summary>
+</component>
+EOF
+
+appstream-compose --prefix="$build_dir/files" --basename=$app_id --origin=flatpak $app_id
+
+flatpak build-finish "$build_dir"
+flatpak build-export "$repo_dir" "$build_dir" 3.22
+flatpak build-bundle --runtime "$repo_dir" "$bundle" "$app_id" 3.22
+trap 'rm "$bundle"' EXIT
+flatpak install -y --$install_target "$bundle"
