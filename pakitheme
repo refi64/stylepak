@@ -57,7 +57,16 @@ rm -rf "$build_dir"
 flatpak build-init --type=extension "$build_dir" $app_id org.freedesktop.Platform \
   org.freedesktop.Platform 18.08
 
-cp -a "$theme_path/"* "$build_dir/files"
+for theme_subdir in "$theme_path/gtk-3.0" "$theme_path/gtk-3.22"; do
+  if [[ -d "$theme_subdir" ]]; then
+    cp -a "$theme_subdir"/* "$build_dir/files"
+    copied=1
+  fi
+done
+
+if [[ -z "$copied" ]]; then
+  die "Theme directory did not contain any recognized GTK themes."
+fi
 
 mkdir -p "$build_dir/files/share/appdata"
 cat >"$build_dir/files/share/appdata/$app_id.appdata.xml" <<EOF
@@ -71,6 +80,9 @@ cat >"$build_dir/files/share/appdata/$app_id.appdata.xml" <<EOF
 EOF
 
 appstream-compose --prefix="$build_dir/files" --basename=$app_id --origin=flatpak $app_id
+
+ostree --repo="$repo_dir" init --mode=archive
+ostree --repo="$repo_dir" config set core.min-free-space-percent 0
 
 flatpak build-finish "$build_dir"
 flatpak build-export "$repo_dir" "$build_dir" 3.22
