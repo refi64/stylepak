@@ -50,42 +50,54 @@ done
 
 [[ -n "$theme_path" ]] || die 'Could not locate theme.'
 
-build_dir="$pakitheme_cache/$theme"
-bundle="$pakitheme_cache/$theme.flatpak"
+bundles=()
 
-rm -rf "$build_dir"
-flatpak build-init --type=extension "$build_dir" $app_id org.freedesktop.Platform \
-  org.freedesktop.Platform 18.08
+while read -r version; do
+  build_dir="$pakitheme_cache/$theme-$version"
+  bundle="$pakitheme_cache/$theme-$version.flatpak"
 
-for theme_subdir in "$theme_path/gtk-3.0" "$theme_path/gtk-3.22"; do
-  if [[ -d "$theme_subdir" ]]; then
-    cp -a "$theme_subdir"/* "$build_dir/files"
-    copied=1
+  rm -rf "$build_dir"
+  flatpak build-init --type=extension "$build_dir" $app_id org.freedesktop.Platform \
+    org.freedesktop.Platform "$version"
+
+  for theme_subdir in "$theme_path/gtk-3.0" "$theme_path/gtk-3.22"; do
+    if [[ -d "$theme_subdir" ]]; then
+      cp -a "$theme_subdir"/* "$build_dir/files"
+      copied=1
+    fi
+  done
+
+  if [[ -z "$copied" ]]; then
+    die "Theme directory did not contain any recognized GTK themes."
   fi
-done
 
-if [[ -z "$copied" ]]; then
-  die "Theme directory did not contain any recognized GTK themes."
-fi
-
-mkdir -p "$build_dir/files/share/appdata"
-cat >"$build_dir/files/share/appdata/$app_id.appdata.xml" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<component type="runtime">
-  <id>$app_id</id>
-  <metadata_license>CC0-1.0</metadata_license>
-  <name>$name Gtk theme</name>
-  <summary>$name Gtk theme (generated via pakitheme)</summary>
-</component>
+  mkdir -p "$build_dir/files/share/appdata"
+  cat >"$build_dir/files/share/appdata/$app_id.appdata.xml" <<EOF
+  <?xml version="1.0" encoding="UTF-8"?>
+  <component type="runtime">
+    <id>$app_id</id>
+    <metadata_license>CC0-1.0</metadata_license>
+    <name>$name Gtk theme</name>
+    <summary>$name Gtk theme (generated via pakitheme)</summary>
+  </component>
 EOF
 
-appstream-compose --prefix="$build_dir/files" --basename=$app_id --origin=flatpak $app_id
+  appstream-compose --prefix="$build_dir/files" --basename=$app_id --origin=flatpak $app_id
 
-ostree --repo="$repo_dir" init --mode=archive
-ostree --repo="$repo_dir" config set core.min-free-space-percent 0
+  ostree --repo="$repo_dir" init --mode=archive
+  ostree --repo="$repo_dir" config set core.min-free-space-percent 0
 
-flatpak build-finish "$build_dir"
-flatpak build-export "$repo_dir" "$build_dir" 3.22
-flatpak build-bundle --runtime "$repo_dir" "$bundle" "$app_id" 3.22
-trap 'rm "$bundle"' EXIT
-flatpak install -y --$install_target "$bundle"
+  flatpak build-finish "$build_dir"
+  flatpak build-export "$repo_dir" "$build_dir" 3.22
+  flatpak build-bundle --runtime "$repo_dir" "$bundle" "$app_id" 3.22
+  trap 'rm "$bundle"' EXIT
+
+  bundles+=("$bundle")
+
+  # flatpak install -y --$install_target "$bundle"
+done < <(flatpak list --$install_target --columns=application:f,branch:f | \
+         awk '/org\.freedesktop\.Platform\s/{print $2;}')
+
+for bundle in "${bundles[@]}"; do
+  flatpak install -y --$install_target "$bundle"
+done
