@@ -94,15 +94,17 @@ while read -r arch; do
   rm -rf "$build_dir"
   ostree --repo="$repo_dir" checkout -U base "$build_dir"
 
-  cat >"$build_dir/metadata" <<EOF
-  [Runtime]
-  name=$app_id
-  runtime=$app_id/$arch/$GTK_THEME_VER
-  sdk=$app_id/$arch/$GTK_THEME_VER
+  read -rd '' metadata <<EOF ||:
+[Runtime]
+name=$app_id
+runtime=$app_id/$arch/$GTK_THEME_VER
+sdk=$app_id/$arch/$GTK_THEME_VER
 EOF
+  # Make sure there is no trailing newline, so xa.metadata doesn't get confused later
+  echo -n "$metadata" > "$build_dir/metadata"
 
   ostree --repo="$repo_dir" commit -b "runtime/$app_id/$arch/$GTK_THEME_VER" \
-    --link-checkout-speedup "$build_dir"
+    --add-metadata-string "xa.metadata=$(cat $build_dir/metadata)" --link-checkout-speedup "$build_dir"
   flatpak build-bundle --runtime "$repo_dir" "$bundle" "$app_id" "$GTK_THEME_VER"
 
   trap 'rm "$bundle"' EXIT
