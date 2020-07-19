@@ -2,6 +2,21 @@
 
 Automatically install your host GTK+ theme as a Flatpak.
 
+## Requirements
+
+In addition to bash and coreutils (which should be available out of the box on most distros),
+the following binaries are needed:
+
+- `ostree`
+- `appstream-util`
+
+The packages that provide these vary by distro:
+
+- Fedora Silverblue: These packages should be available out of the box.
+- Fedora: `dnf install ostree libappstream-glib`
+- Debian/Ubuntu and variants: `apt install ostree appstream-util`
+- Arch/Manjaro: `pacman -S ostree appstream-glib`
+
 ## Usage
 
 Run `pakitheme install-system` and `pakitheme install-user` to grab your current GTK+ theme and
