@@ -16,7 +16,7 @@ The packages that provide these vary by distro:
 - Fedora: `dnf install ostree libappstream-glib`
 - Debian/Ubuntu and variants: `apt install ostree appstream-util`
 - Arch/Manjaro: `pacman -S ostree appstream-glib`
-- OpenSUSE: `zypper install appstream-glib`
+- OpenSUSE: `zypper install libostree appstream-glib`
 
 ## Usage
 
