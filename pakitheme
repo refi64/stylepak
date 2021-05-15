@@ -38,8 +38,11 @@ esac
 
 [[ -n "$2" ]] && theme=$2 || \
   theme=$(gsettings get org.gnome.desktop.interface gtk-theme | tr -d "'")
-echo "Converting theme: $theme"
 
+echo "$theme" | grep -Eq '^[A-Za-z0-9_\-]+$' || \
+  die "Invalid theme name (may only contain letters, digits, '_', '-'): $theme"
+
+echo "Converting theme: $theme"
 app_id=org.gtk.Gtk3theme.$theme
 
 for location in "$data_home/themes" "$HOME/.themes" /usr/share/themes; do
