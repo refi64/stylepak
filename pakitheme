@@ -118,5 +118,9 @@ EOF
 done < <(flatpak list --runtime --columns=arch:f | sort -u)
 
 for bundle in "${bundles[@]}"; do
-  flatpak install -y --$install_target "$bundle"
+  if [ "$install_target" == "system" ]; then
+    sudo flatpak install -y --$install_target "$bundle"
+  else
+    flatpak install -y --$install_target "$bundle"
+  fi
 done
