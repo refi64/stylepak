@@ -25,4 +25,7 @@ install it as a Flatpak into either the system or user installation, respectivel
 pass a theme name, e.g. `pakitheme install-user Adapta`, and pakitheme will install that theme
 instead of your current one.
 
+### css import
+For themes with custom icons directory you can use the gtk css import directive with `pakitheme <install-user|install-system> use-import`
+
 Use `pakitheme clear-cache` to clear the theme storage cache.
