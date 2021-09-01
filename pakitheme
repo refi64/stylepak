@@ -11,7 +11,7 @@ GTK_THEME_VER=3.22
 [[ -n "$PAKITHEME_VERBOSE" ]] && set -x ||:
 
 usage() {
-  echo 'usage: pakitheme install-system|install-user|clear-cache [<theme>]'
+  echo 'usage: pakitheme install-system|install-user|clear-cache use-import [<theme>]'
 }
 
 die() {
@@ -36,8 +36,16 @@ clear-cache) rm -rf "$pakitheme_cache"; exit ;;
 *) usage; exit 1 ;;
 esac
 
+if [[ $# == 2 ]]; then 
+  if [[ "$2" == "use-import" ]]; then
+    theme_import="true"
+    [[ -n "$3" ]] && theme=$3 || \
+      theme=$(gsettings get org.gnome.desktop.interface gtk-theme | tr -d "'")
+  fi
+else
 [[ -n "$2" ]] && theme=$2 || \
   theme=$(gsettings get org.gnome.desktop.interface gtk-theme | tr -d "'")
+fi
 
 echo "$theme" | grep -Eq '^[A-Za-z0-9_\-]+$' || \
   die "Invalid theme name (may only contain letters, digits, '_', '-'): $theme"
@@ -72,7 +80,17 @@ theme_gtk_version=$(ls -1d "$theme_path"/* 2>/dev/null | grep -Po 'gtk-3\.\K\d+$
 [[ -n "$theme_gtk_version" ]] || \
   die "Theme directory did not contain any recognized GTK themes."
 
-cp -a "$theme_path/gtk-3.$theme_gtk_version/"* "$build_dir/files"
+# If using import clone whole dir not just gtk3
+if [[ -n "$theme_import" ]]; then
+  cp -a "$theme_path/" "$build_dir/files"
+else
+  cp -a "$theme_path/gtk-3.$theme_gtk_version/"* "$build_dir/files"
+fi
+
+# If using import create custom gtk.css file
+if [[ -n "$theme_import" ]]; then
+  echo "@import url('./$(basename "${theme_path}")/gtk-3.$theme_gtk_version/gtk.css');" >> "$build_dir/files/gtk.css"
+fi
 
 mkdir -p "$build_dir/files/share/appdata"
 cat >"$build_dir/files/share/appdata/$app_id.appdata.xml" <<EOF
