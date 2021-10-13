@@ -10,19 +10,12 @@ GTK_THEME_VER=3.22
 
 [[ -n "$STYLEPAK_VERBOSE" ]] && set -x ||:
 
-usage() {
-  echo 'usage: stylepak install-system|install-user|clear-cache [<theme>]'
-}
+usage='usage: stylepak install-system|install-user|clear-cache [<theme>]'
 
 die() {
   echo "$@" >&2
   exit 1
 }
-
-if [[ -z "$1" || "$1" == "-h" || "$1" == "--help" ]]; then
-  usage
-  exit
-fi
 
 cache_home="${XDG_CACHE_HOME:-$HOME/.cache}"
 data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
@@ -36,14 +29,31 @@ if [[ -e "$old_cache" ]]; then
   [[ -e "$stylepak_cache" ]] && rm -rf "$old_cache" || mv "$old_cache" "$stylepak_cache"
 fi
 
-case "$1" in
-install-system) install_target=system ;;
-install-user) install_target=user ;;
-clear-cache) rm -rf "$stylepak_cache"; exit ;;
-*) usage; exit 1 ;;
-esac
+install_target=""
+theme=""
 
-[[ -n "$2" ]] && theme=$2 || \
+for arg in "$@"; do
+  case "$arg" in
+  -h|--help) echo "$usage"; exit ;;
+  -*) die "$usage" ;;
+  *)
+    if [[ -z "$install_target" ]]; then
+      case "$arg" in
+        install-system) install_target=system ;;
+        install-user) install_target=user ;;
+        *) die "$usage" ;;
+      esac
+    elif [[ -z "$theme" ]]; then
+      theme="$arg"
+    else
+      die "$usage"
+    fi
+    ;;
+  esac
+done
+
+[[ -n "$install_target" ]] || die "$usage"
+[[ -n "$theme" ]] || \
   theme=$(gsettings get org.gnome.desktop.interface gtk-theme | tr -d "'")
 
 echo "$theme" | grep -Eq '^[A-Za-z0-9_\-]+$' || \
