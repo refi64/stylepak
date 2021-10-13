@@ -75,7 +75,11 @@ build_dir="$root_dir/build"
 rm -rf "$build_dir"
 mkdir -p "$build_dir/files"
 
-theme_gtk_version=$(ls -1d "$theme_path"/* 2>/dev/null | grep -Po 'gtk-3\.\K\d+$' | sort -nr | head -1)
+theme_gtk_version=$(ls -1d "$theme_path"/* 2>/dev/null \
+  | grep -Po 'gtk-3\.\K\d+$' \
+  | sort -nr \
+  | head -1)
+
 [[ -n "$theme_gtk_version" ]] || \
   die "Theme directory did not contain any recognized GTK themes."
 
@@ -92,7 +96,10 @@ cat >"$build_dir/files/share/appdata/$app_id.appdata.xml" <<EOF
 </component>
 EOF
 
-appstream-compose --prefix="$build_dir/files" --basename="$app_id" --origin=flatpak "$app_id"
+appstream-compose \
+  --prefix="$build_dir/files" \
+  --basename="$app_id" \
+  --origin=flatpak "$app_id"
 
 ostree --repo="$repo_dir" commit -b base --tree=dir="$build_dir"
 
@@ -113,8 +120,11 @@ EOF
   # Make sure there is no trailing newline, so xa.metadata doesn't get confused later
   echo -n "$metadata" > "$build_dir/metadata"
 
-  ostree --repo="$repo_dir" commit -b "runtime/$app_id/$arch/$GTK_THEME_VER" \
-    --add-metadata-string "xa.metadata=$(cat $build_dir/metadata)" --link-checkout-speedup "$build_dir"
+  ostree --repo="$repo_dir" commit \
+    -b "runtime/$app_id/$arch/$GTK_THEME_VER" \
+    --add-metadata-string "xa.metadata=$(cat $build_dir/metadata)" \
+    --link-checkout-speedup \
+    "$build_dir"
   flatpak build-bundle --runtime "$repo_dir" "$bundle" "$app_id" "$GTK_THEME_VER"
 
   trap 'rm "$bundle"' EXIT
