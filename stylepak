@@ -8,10 +8,10 @@ set -e
 
 GTK_THEME_VER=3.22
 
-[[ -n "$PAKITHEME_VERBOSE" ]] && set -x ||:
+[[ -n "$STYLEPAK_VERBOSE" ]] && set -x ||:
 
 usage() {
-  echo 'usage: pakitheme install-system|install-user|clear-cache [<theme>]'
+  echo 'usage: stylepak install-system|install-user|clear-cache [<theme>]'
 }
 
 die() {
@@ -26,13 +26,20 @@ fi
 
 cache_home="${XDG_CACHE_HOME:-$HOME/.cache}"
 data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
-pakitheme_cache="$cache_home/pakitheme"
-repo_dir="$pakitheme_cache/repo"
+stylepak_cache="$cache_home/stylepak"
+repo_dir="$stylepak_cache/repo"
+
+old_cache="$cache_home/pakitheme"
+if [[ -e "$old_cache" ]]; then
+  # If the cache under the old name still exists, try to preserve it under the new name.
+  # But, if the new cache also already exists, just trash the old one instead.
+  [[ -e "$stylepak_cache" ]] && rm -rf "$old_cache" || mv "$old_cache" "$stylepak_cache"
+fi
 
 case "$1" in
 install-system) install_target=system ;;
 install-user) install_target=user ;;
-clear-cache) rm -rf "$pakitheme_cache"; exit ;;
+clear-cache) rm -rf "$stylepak_cache"; exit ;;
 *) usage; exit 1 ;;
 esac
 
@@ -55,7 +62,7 @@ done
 
 [[ -n "$theme_path" ]] || die 'Could not locate theme.'
 
-root_dir="$pakitheme_cache/$theme"
+root_dir="$stylepak_cache/$theme"
 repo_dir="$root_dir/repo"
 
 rm -rf "$root_dir" "$repo_dir"
@@ -81,7 +88,7 @@ cat >"$build_dir/files/share/appdata/$app_id.appdata.xml" <<EOF
   <id>$app_id</id>
   <metadata_license>CC0-1.0</metadata_license>
   <name>$name Gtk theme</name>
-  <summary>$name Gtk theme (generated via pakitheme)</summary>
+  <summary>$name Gtk theme (generated via stylepak)</summary>
 </component>
 EOF
 
