@@ -101,8 +101,8 @@ cat >"$build_dir/files/share/appdata/$app_id.appdata.xml" <<EOF
 <component type="runtime">
   <id>$app_id</id>
   <metadata_license>CC0-1.0</metadata_license>
-  <name>$name Gtk theme</name>
-  <summary>$name Gtk theme (generated via stylepak)</summary>
+  <name>$name $theme</name>
+  <summary>$name $theme (generated via stylepak)</summary>
 </component>
 EOF
 
