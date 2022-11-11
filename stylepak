@@ -135,7 +135,8 @@ EOF
     --add-metadata-string "xa.metadata=$(cat $build_dir/metadata)" \
     --link-checkout-speedup \
     "$build_dir"
-  flatpak build-bundle --runtime "$repo_dir" "$bundle" "$app_id" "$GTK_THEME_VER"
+  flatpak build-bundle --runtime --arch="$arch" \
+    "$repo_dir" "$bundle" "$app_id" "$GTK_THEME_VER"
 
   trap 'rm "$bundle"' EXIT
 
