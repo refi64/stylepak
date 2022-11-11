@@ -20,9 +20,9 @@ The packages that provide these vary by distro:
 
 ## Usage
 
-Run `stylepak install-system` and `stylepak install-user` to grab your current GTK+ theme and
+Run `./stylepak install-system` and `./stylepak install-user` to grab your current GTK+ theme and
 install it as a Flatpak into either the system or user installation, respectively. You can also
-pass a theme name, e.g. `stylepak install-user Adapta`, and stylepak will install that theme
+pass a theme name, e.g. `./stylepak install-user Adapta`, and stylepak will install that theme
 instead of your current one.
 
-Use `stylepak clear-cache` to clear the theme storage cache.
+Use `./stylepak clear-cache` to clear the theme storage cache.
