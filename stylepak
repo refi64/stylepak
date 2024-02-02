@@ -41,6 +41,7 @@ for arg in "$@"; do
       case "$arg" in
         install-system) install_target=system ;;
         install-user) install_target=user ;;
+        clear-cache) rm -rf "$stylepak_cache"; exit ;;
         *) die "$usage" ;;
       esac
     elif [[ -z "$theme" ]]; then
